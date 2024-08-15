@@ -7,17 +7,12 @@ import tech.turso.libsql.proto.PositionalParameters
 import tech.turso.libsql.proto.Value
 
 class Transaction internal constructor(private var inner: Long) : Connection {
-    override fun execute(sql: String) {
-        require(this.inner != 0L) { "Attempted to execute with a closed Transaction" }
-        nativeExecute(this.inner, sql, byteArrayOf())
-    }
+    override fun execute(sql: String) = nativeExecute(this.inner, sql, byteArrayOf())
 
     override fun execute(
         sql: String,
         params: Map<String, Value>,
     ) {
-        require(this.inner != 0L) { "Attempted to execute with a closed Transaction" }
-
         val buf =
             Parameters.newBuilder()
                 .setNamed(NamedParameters.newBuilder().putAllParameters(params))
@@ -31,8 +26,6 @@ class Transaction internal constructor(private var inner: Long) : Connection {
         sql: String,
         vararg params: Value,
     ) {
-        require(this.inner != 0L) { "Attempted to execute with a closed Transaction" }
-
         val buf =
             Parameters.newBuilder()
                 .setPositional(
@@ -45,17 +38,12 @@ class Transaction internal constructor(private var inner: Long) : Connection {
         nativeQuery(this.inner, sql, buf)
     }
 
-    override fun query(sql: String): Rows {
-        require(this.inner != 0L) { "Attempted to query with a closed Transaction" }
-        return Rows(nativeQuery(this.inner, sql, byteArrayOf()))
-    }
+    override fun query(sql: String) = Rows(nativeQuery(this.inner, sql, byteArrayOf()))
 
     override fun query(
         sql: String,
         params: Map<String, Value>,
     ): Rows {
-        require(this.inner != 0L) { "Attempted to query with a closed Transaction" }
-
         val buf =
             Parameters.newBuilder()
                 .setNamed(NamedParameters.newBuilder().putAllParameters(params))
@@ -69,8 +57,6 @@ class Transaction internal constructor(private var inner: Long) : Connection {
         sql: String,
         vararg params: Value,
     ): Rows {
-        require(this.inner != 0L) { "Attempted to query with a closed Transaction" }
-
         val buf =
             Parameters.newBuilder()
                 .setPositional(
@@ -83,25 +69,19 @@ class Transaction internal constructor(private var inner: Long) : Connection {
         return Rows(nativeQuery(this.inner, sql, buf))
     }
 
-    override fun transaction(): Transaction {
-        require(this.inner != 0L) { "Transaction already closed" }
-        return Transaction(nativeTransaction(this.inner))
-    }
+    override fun transaction() = Transaction(nativeTransaction(this.inner))
 
     override fun close() {
-        require(this.inner != 0L) { "Transaction already closed" }
         nativeClose(this.inner)
         this.inner = 0L
     }
 
     fun commit() {
-        require(this.inner != 0L) { "Transaction already closed" }
         nativeCommit(this.inner)
         this.inner = 0L
     }
 
     fun rollback() {
-        require(this.inner != 0L) { "Transaction already closed" }
         nativeRollback(this.inner)
         this.inner = 0L
     }

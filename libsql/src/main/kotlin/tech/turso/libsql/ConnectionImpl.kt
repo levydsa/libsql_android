@@ -5,18 +5,15 @@ import tech.turso.libsql.proto.Parameters
 import tech.turso.libsql.proto.PositionalParameters
 import tech.turso.libsql.proto.Value
 
-open class ConnectionImpl internal constructor(private var inner: Long) : Connection {
-    override fun execute(sql: String) {
-        require(this.inner != 0L) { "Attempted to execute with a closed Connection" }
-        nativeExecute(this.inner, sql, byteArrayOf())
-    }
+open class ConnectionImpl internal constructor(inner: Long) : Connection {
+    private var inner by Pointer(inner)
+
+    override fun execute(sql: String) = nativeExecute(this.inner, sql, byteArrayOf())
 
     override fun execute(
         sql: String,
         params: Map<String, Value>,
     ) {
-        require(this.inner != 0L) { "Attempted to execute with a closed Connection" }
-
         val buf =
             Parameters.newBuilder()
                 .setNamed(NamedParameters.newBuilder().putAllParameters(params))
@@ -44,17 +41,12 @@ open class ConnectionImpl internal constructor(private var inner: Long) : Connec
         nativeQuery(this.inner, sql, buf)
     }
 
-    override fun query(sql: String): Rows {
-        require(this.inner != 0L) { "Attempted to query with a closed Connection" }
-        return Rows(nativeQuery(this.inner, sql, byteArrayOf()))
-    }
+    override fun query(sql: String) = Rows(nativeQuery(this.inner, sql, byteArrayOf()))
 
     override fun query(
         sql: String,
         params: Map<String, Value>,
     ): Rows {
-        require(this.inner != 0L) { "Attempted to query with a closed Connection" }
-
         val buf =
             Parameters.newBuilder()
                 .setNamed(NamedParameters.newBuilder().putAllParameters(params))
@@ -68,8 +60,6 @@ open class ConnectionImpl internal constructor(private var inner: Long) : Connec
         sql: String,
         vararg params: Value,
     ): Rows {
-        require(this.inner != 0L) { "Attempted to query with a closed Connection" }
-
         val buf =
             Parameters.newBuilder()
                 .setPositional(
@@ -82,13 +72,9 @@ open class ConnectionImpl internal constructor(private var inner: Long) : Connec
         return Rows(nativeQuery(this.inner, sql, buf))
     }
 
-    override fun transaction(): Transaction {
-        require(this.inner != 0L) { "Database already closed" }
-        return Transaction(nativeTransaction(this.inner))
-    }
+    override fun transaction(): Transaction = Transaction(nativeTransaction(this.inner))
 
     override fun close() {
-        require(this.inner != 0L) { "Database already closed" }
         nativeClose(this.inner)
         this.inner = 0L
     }

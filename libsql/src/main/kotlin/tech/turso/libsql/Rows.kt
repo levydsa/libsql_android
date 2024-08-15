@@ -3,20 +3,14 @@ package tech.turso.libsql
 import tech.turso.libsql.proto.Row
 import tech.turso.libsql.proto.Value
 
-class Rows internal constructor(private var inner: Long) : AutoCloseable {
-    init {
-        require(this.inner != 0L) { "Attempted to construct a Rows with a null pointer" }
-    }
+class Rows internal constructor(inner: Long) : AutoCloseable {
+    private var inner by Pointer(inner)
 
-    fun next(): List<Value> {
-        val buf: ByteArray = nativeNext(this.inner)
-        return Row.parseFrom(buf).valuesList
-    }
+    fun next(): List<Value> = Row.parseFrom(nativeNext(this.inner)).valuesList
 
     override fun close() {
-        require(this.inner != 0L) { "Rows object already closed" }
         nativeClose(this.inner)
-        this.inner = 0
+        this.inner = 0L
     }
 
     private external fun nativeNext(rows: Long): ByteArray
